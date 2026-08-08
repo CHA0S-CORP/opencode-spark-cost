@@ -83,8 +83,12 @@ function pickRate(
   const table = weekend ? o.weekend : o.weekday
   const h = now.getHours()
   for (const b of table)
-    for (const [start, end] of b.hours)
-      if (h >= start && h < end) return { price: b.price, label: b.label ?? "" }
+    for (const [start, end] of b.hours) {
+      // Normal range [start,end); wrapping range (start > end) spans midnight,
+      // e.g. [22,6] matches 22,23,0..5.
+      const hit = start <= end ? h >= start && h < end : h >= start || h < end
+      if (hit) return { price: b.price, label: b.label ?? "" }
+    }
   return { price: table[0]?.price ?? 0, label: table[0]?.label ?? "" }
 }
 
