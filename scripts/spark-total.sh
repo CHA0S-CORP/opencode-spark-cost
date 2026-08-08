@@ -4,19 +4,29 @@
 # priced at whatever rate opencode-spark-cost set when it was generated.
 #
 # Usage: spark-total [--db PATH] [--provider ID]
-# Requires: sqlite3 with json1 (standard since 3.9).
+#   --db PATH        opencode SQLite db (default: $OPENCODE_DB or
+#                    ~/.local/share/opencode/opencode.db). --db=PATH also works.
+#   --provider ID    limit to one provider id. --provider=ID also works.
+# Requires: sqlite3 with json1 (built in by default since 3.38).
 
 set -euo pipefail
 
 DB="${OPENCODE_DB:-$HOME/.local/share/opencode/opencode.db}"
 PROVIDER=""
 
+# Print the leading comment block (usage), stopping at the first non-# line.
+usage() { awk 'NR==1{next} /^#/{sub(/^# ?/,"");print;next} {exit}' "$0"; }
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --db) DB="$2"; shift 2 ;;
-    --provider) PROVIDER="$2"; shift 2 ;;
-    -h|--help) grep '^#' "$0" | tail -n +2 | cut -c3-; exit 0 ;;
-    *) echo "unknown arg: $1" >&2; exit 2 ;;
+    --db=*)       DB="${1#*=}"; shift ;;
+    --provider=*) PROVIDER="${1#*=}"; shift ;;
+    --db)         [ $# -ge 2 ] || { echo "--db needs a path" >&2; exit 2; }
+                  DB="$2"; shift 2 ;;
+    --provider)   [ $# -ge 2 ] || { echo "--provider needs an id" >&2; exit 2; }
+                  PROVIDER="$2"; shift 2 ;;
+    -h|--help)    usage; exit 0 ;;
+    *)            echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
 

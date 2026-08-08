@@ -74,6 +74,13 @@ const num = (v: unknown, d: number) => {
   return Number.isFinite(n) ? (n as number) : d
 }
 
+// Like num() but rejects non-positive values (watts / throughput must be > 0,
+// else the model would be reported as free or negative). Falls back to d.
+const pos = (v: unknown, d: number) => {
+  const n = num(v, d)
+  return n > 0 ? n : d
+}
+
 function pickRate(
   now: Date,
   o: Required<Pick<SparkCostOptions, "weekday" | "weekend">> & { flat?: number },
@@ -103,10 +110,14 @@ export const SparkCost: Plugin = async ({ client }, options) => {
   const provider = o.provider ?? env.SPARK_PROVIDER ?? "ling-codellm"
   const model = o.model ?? env.SPARK_MODEL ?? "ling-3.0-flash"
   const allModels = o.allModels ?? env.SPARK_ALL_MODELS === "true"
-  const watts = num(o.watts ?? env.SPARK_WATTS, 30)
-  const outputTps = num(o.outputTps ?? env.SPARK_OUTPUT_TPS, 20)
-  const prefillTps = num(o.prefillTps ?? env.SPARK_PREFILL_TPS, 70)
-  const flat = o.flat ?? (env.SPARK_FLAT_RATE ? num(env.SPARK_FLAT_RATE, NaN) : undefined)
+  const watts = pos(o.watts ?? env.SPARK_WATTS, 30)
+  const outputTps = pos(o.outputTps ?? env.SPARK_OUTPUT_TPS, 20)
+  const prefillTps = pos(o.prefillTps ?? env.SPARK_PREFILL_TPS, 70)
+  // Coerce flat through num() so a string (e.g. { "flat": "0.30" }) or env var
+  // is parsed the same way. Negative is allowed (real-time grid prices can go
+  // negative); NaN/empty is treated as "no flat rate".
+  const flatRaw = o.flat ?? env.SPARK_FLAT_RATE
+  const flat = flatRaw != null ? num(flatRaw, NaN) : undefined
   const weekday = o.weekday ?? DEFAULT_WEEKDAY
   const weekend = o.weekend ?? DEFAULT_WEEKEND
   const showToast = o.toast ?? env.SPARK_TOAST !== "false"
@@ -142,7 +153,8 @@ export const SparkCost: Plugin = async ({ client }, options) => {
       let applied = false
       for (const id of targets) {
         if (!models[id]) continue
-        models[id].cost = { ...cost }
+        // Merge so any existing cost subfields (e.g. context_over_200k) survive.
+        models[id].cost = { ...(models[id].cost ?? {}), ...cost }
         applied = true
       }
       if (!applied) return

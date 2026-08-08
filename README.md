@@ -69,6 +69,11 @@ Decode batch  ... gen throughput (token/s): 20.37     ← outputTps
 Prefill batch ... input throughput (token/s): 90.44   ← prefillTps
 ```
 
+Decode is steady; prefill swings a lot (it's contaminated by fast cache-hit
+tokens). Take a representative decode figure and a conservative prefill one —
+the shipped defaults (20 / 70) are a rounded middle of a real Spark, not the
+single log line above.
+
 **Rate** — your utility's $/kWh. Default is SDG&E TOU-DR-1 Tier 1 (San Diego).
 Override `weekday`/`weekend`, or set a single `flat` rate.
 
