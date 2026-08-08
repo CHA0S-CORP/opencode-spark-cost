@@ -108,6 +108,33 @@ Or just a flat rate:
 ["opencode-spark-cost", { "flat": 0.15, "watts": 30, "outputTps": 20 }]
 ```
 
+## Cumulative cost
+
+**Per session** — native. Once this plugin sets `cost`, opencode's session
+cost badge sums every message automatically. Nothing to do.
+
+**Lifetime, across all sessions** — opencode persists every message (with its
+`cost`, priced at whatever rate was active when generated) in its SQLite store.
+`scripts/spark-total.sh` sums them:
+
+```bash
+./scripts/spark-total.sh                     # all providers
+./scripts/spark-total.sh --provider ling-codellm
+```
+
+```
+┌──────────────┬────────────────┬──────┬─────────┬────────┬─────────┐
+│   provider   │     model      │ msgs │  cost   │ in_tok │ out_tok │
+├──────────────┼────────────────┼──────┼─────────┼────────┼─────────┤
+│ ling-codellm │ ling-3.0-flash │ 52   │ $0.0022 │ 737004 │ 10154   │
+└──────────────┴────────────────┴──────┴─────────┴────────┴─────────┘
+TOTAL: $0.0022 across 52 messages
+```
+
+Requires `sqlite3`. Reads `~/.local/share/opencode/opencode.db` (override with
+`--db` or `$OPENCODE_DB`). Only messages generated *after* the plugin is
+installed carry cost; earlier ones count as $0.
+
 ## Caveats
 
 - **Rate is picked once, at launch.** The `config` hook fires at startup only,
