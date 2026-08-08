@@ -1,0 +1,42 @@
+{
+  "name": "opencode-spark-cost",
+  "version": "0.1.0",
+  "description": "Show real electricity cost of local/offline models (e.g. NVIDIA DGX Spark) in opencode's native cost badge, using time-of-use utility rates.",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "spark",
+    "dgx-spark",
+    "vllm",
+    "sglang",
+    "cost",
+    "energy",
+    "electricity"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CHA0S-CORP/opencode-spark-cost.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CHA0S-CORP/opencode-spark-cost/issues"
+  },
+  "homepage": "https://github.com/CHA0S-CORP/opencode-spark-cost#readme",
+  "license": "MIT",
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.17.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.17.6",
+    "typescript": "^5"
+  }
+}
