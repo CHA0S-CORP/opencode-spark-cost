@@ -126,6 +126,12 @@ export const SparkCost: Plugin = async ({ client }, options) => {
       const cost = {
         input: perMillion(watts, price, prefillTps),
         output: perMillion(watts, price, outputTps),
+        // Cache-hit input tokens skip prefill compute → ~free. Billing them
+        // at the full input rate hugely overstates cost in agentic loops
+        // that replay a large, growing context each turn.
+        cache_read: 0,
+        // First-pass prefill (cache write) is the real prefill compute.
+        cache_write: perMillion(watts, price, prefillTps),
       }
 
       const targets = allModels ? Object.keys(models) : [model]
