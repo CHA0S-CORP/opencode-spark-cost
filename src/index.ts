@@ -58,12 +58,12 @@ export type SparkCostOptions = {
 }
 
 // SDG&E TOU-DR-1, Tier 1 ($/kWh) as of 2026. Override for your utility.
-const DEFAULT_WEEKDAY: TouBracket[] = [
+export const DEFAULT_WEEKDAY: TouBracket[] = [
   { price: 0.267, label: "super-off-peak", hours: [[0, 6], [10, 14]] },
   { price: 0.357, label: "off-peak", hours: [[6, 10], [14, 16], [21, 24]] },
   { price: 0.584, label: "on-peak", hours: [[16, 21]] },
 ]
-const DEFAULT_WEEKEND: TouBracket[] = [
+export const DEFAULT_WEEKEND: TouBracket[] = [
   { price: 0.267, label: "super-off-peak", hours: [[0, 14]] },
   { price: 0.357, label: "off-peak", hours: [[14, 16], [21, 24]] },
   { price: 0.584, label: "on-peak", hours: [[16, 21]] },
@@ -81,7 +81,7 @@ const pos = (v: unknown, d: number) => {
   return n > 0 ? n : d
 }
 
-function pickRate(
+export function pickRate(
   now: Date,
   o: Required<Pick<SparkCostOptions, "weekday" | "weekend">> & { flat?: number },
 ): { price: number; label: string } {
@@ -100,7 +100,7 @@ function pickRate(
 }
 
 /** $ per 1M tokens. */
-const perMillion = (watts: number, price: number, tps: number) =>
+export const perMillion = (watts: number, price: number, tps: number) =>
   tps > 0 ? (watts * price) / (3.6 * tps) : 0
 
 /**

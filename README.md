@@ -1,5 +1,7 @@
 # opencode-spark-cost
 
+[![CI](https://github.com/CHA0S-CORP/opencode-spark-cost/actions/workflows/ci.yml/badge.svg)](https://github.com/CHA0S-CORP/opencode-spark-cost/actions/workflows/ci.yml)
+
 Show the **electricity cost** of running a local/offline model in
 [opencode](https://opencode.ai)'s native cost badge.
 
@@ -17,10 +19,9 @@ much faster per token, and therefore cheaper.
 
 ## Install
 
-opencode auto-loads plugins from `~/.config/opencode/plugins/` (global) or
-`.opencode/plugins/` (per project). Two ways:
-
-**A. npm package (recommended)** — add to `opencode.json`:
+**A. npm package (recommended).** opencode installs plugins listed in the
+`plugin` array automatically (via Bun) at startup — no manual `npm install`.
+Add the package to `opencode.json`, with options as the second tuple element:
 
 ```json
 {
@@ -36,17 +37,18 @@ opencode auto-loads plugins from `~/.config/opencode/plugins/` (global) or
 }
 ```
 
-Install from GitHub:
+Pin a version if you like: `"opencode-spark-cost@0.1.0"`. Relaunch opencode; a
+toast shows your spend + the picked rate at startup. (opencode's plugin array
+takes npm package names only — no options, no periods toast tuning — if you use
+the bare-string form `"opencode-spark-cost"`; the tuple form above passes
+options.)
 
-```bash
-npm i -D github:CHA0S-CORP/opencode-spark-cost
-```
+**B. Drop-in file (no npm).** Copy `src/index.ts` to
+`~/.config/opencode/plugins/spark-cost.ts` (global) or `.opencode/plugins/` in a
+project. A drop-in gets no options object, so configure it with the `SPARK_*`
+env vars (see the table below).
 
-**B. Drop-in file** — copy `src/index.ts` to
-`~/.config/opencode/plugins/spark-cost.ts` and edit the constants at the top.
-Configure via the `SPARK_*` env vars (see below) since drop-in gets no options.
-
-Relaunch opencode. A toast shows the picked bracket at startup.
+Either way, relaunch opencode to load it.
 
 ## Measure your numbers
 
@@ -209,6 +211,26 @@ the exact numbers this repo ships with; swap the rate/throughput for your own.
 On-peak costs **2.19×** super-off-peak — run overnight for the cheapest tokens.
 For scale, hosted frontier models bill ~$5–15 / 1M output; the Spark on-peak is
 **$0.24 / 1M**, ~20–60× cheaper per token on energy alone (hardware not amortized).
+
+## Development
+
+```bash
+bun install          # dev deps (@opencode-ai/plugin, typescript)
+bun run typecheck    # tsc --noEmit
+bun test             # unit tests (pricing, TOU brackets, cost injection)
+bun run check        # typecheck + test
+npm pack             # build the publishable tarball
+```
+
+CI (`.github/workflows/ci.yml`) runs typecheck, tests, ShellCheck, and `npm
+pack` on every push/PR. Publishing is automated: push a `vX.Y.Z` tag and
+`release.yml` publishes to npm with provenance (needs an `NPM_TOKEN` repo
+secret) and cuts a GitHub release.
+
+```bash
+npm version patch    # bumps package.json + tags
+git push --follow-tags
+```
 
 ## License
 

@@ -10,8 +10,24 @@
     ".": "./src/index.ts"
   },
   "files": [
-    "src"
+    "src",
+    "scripts",
+    "commands"
   ],
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test",
+    "build": "npm pack --dry-run",
+    "check": "bun run typecheck && bun run test",
+    "prepublishOnly": "bun run typecheck"
+  },
   "keywords": [
     "opencode",
     "opencode-plugin",
