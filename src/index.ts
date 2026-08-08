@@ -107,10 +107,15 @@ export const SparkCost: Plugin = async ({ client }, options) => {
   const weekend = o.weekend ?? DEFAULT_WEEKEND
   const showToast = o.toast ?? env.SPARK_TOAST !== "false"
 
+  // Summary for the toast, filled by the config hook.
+  let summary: string | null = null
+  let toasted = false
+
   return {
+    // Synchronous cost injection. Must NOT block or await anything slow —
+    // this runs during bootstrap before the TUI/server is ready.
     config: async (config: any) => {
-      const prov = config?.provider?.[provider]
-      const models = prov?.models
+      const models = config?.provider?.[provider]?.models
       if (!models) return
 
       const { price, label } = pickRate(new Date(), {
@@ -132,18 +137,20 @@ export const SparkCost: Plugin = async ({ client }, options) => {
       }
       if (!applied) return
 
-      if (showToast) {
-        try {
-          await client.tui.showToast({
-            body: {
-              title: "Spark cost",
-              message: `${label || "rate"} @ ${(price * 100).toFixed(1)}¢/kWh → $${cost.output.toFixed(4)}/1M out, $${cost.input.toFixed(4)}/1M in`,
-              variant: "info",
-            },
-          })
-        } catch {
-          // TUI not attached (e.g. server/CI) — silent.
-        }
+      summary = `${label || "rate"} @ ${(price * 100).toFixed(1)}¢/kWh → $${cost.output.toFixed(4)}/1M out, $${cost.input.toFixed(4)}/1M in`
+    },
+
+    // Toast once, on the first event — by now the TUI is attached, so this
+    // is safe to await. Doing it in `config` deadlocks bootstrap.
+    event: async () => {
+      if (toasted || !summary || !showToast) return
+      toasted = true
+      try {
+        await client.tui.showToast({
+          body: { title: "Spark cost", message: summary, variant: "info" },
+        })
+      } catch {
+        // TUI not attached (server/CI) — silent.
       }
     },
   }
