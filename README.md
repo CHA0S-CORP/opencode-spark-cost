@@ -115,6 +115,11 @@ Or just a flat rate:
 
 ## Cumulative cost
 
+**Launch toast** — on the first event each session the plugin toasts your spend
+so far: `Today $… · Week $… · Month $…` plus the current rate. Totals come from
+opencode's SQLite store (read-only, via the built-in `bun:sqlite`); if it can't
+be opened the toast falls back to just the rate line.
+
 **Per session** — native. Once this plugin sets `cost`, opencode's session
 cost badge sums every message automatically. Nothing to do.
 
@@ -123,9 +128,26 @@ cost badge sums every message automatically. Nothing to do.
 `scripts/spark-total.sh` sums them:
 
 ```bash
-./scripts/spark-total.sh                     # all providers
-./scripts/spark-total.sh --provider ling-codellm
+./scripts/spark-total.sh                 # by provider/model + grand TOTAL
+./scripts/spark-total.sh --by-session    # per-session table (title/model/cost/tokens)
+./scripts/spark-total.sh --periods       # today / this week / this month / all time
+./scripts/spark-total.sh --provider ling-codellm   # filter to one provider
 ```
+
+### `/spark-usage` slash command
+
+`commands/spark-usage.md` is an opencode command that runs the script and prints
+the periods + by-session + by-model breakdown in-chat. Install it:
+
+```bash
+mkdir -p ~/.config/opencode/{bin,commands}
+cp scripts/spark-total.sh ~/.config/opencode/bin/ && chmod +x ~/.config/opencode/bin/spark-total.sh
+cp commands/spark-usage.md ~/.config/opencode/commands/
+```
+
+Then type `/spark-usage` in opencode. (The command shells out to
+`~/.config/opencode/bin/spark-total.sh`; edit the paths in the `.md` if you keep
+the script elsewhere.)
 
 ```
 ┌──────────────┬────────────────┬──────┬─────────┬────────┬─────────┐

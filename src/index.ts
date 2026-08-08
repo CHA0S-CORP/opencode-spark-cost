@@ -103,6 +103,38 @@ function pickRate(
 const perMillion = (watts: number, price: number, tps: number) =>
   tps > 0 ? (watts * price) / (3.6 * tps) : 0
 
+/**
+ * Sum assistant-message cost for today / this week / this month from opencode's
+ * SQLite store, using local-time buckets on message.time_created (epoch ms).
+ * Returns null if the db can't be opened (bun:sqlite missing, no db, locked).
+ */
+async function periodTotals(
+  env: Record<string, string | undefined>,
+): Promise<{ today: number; week: number; month: number } | null> {
+  try {
+    const { Database } = await import("bun:sqlite")
+    const path =
+      env.OPENCODE_DB ?? `${env.HOME}/.local/share/opencode/opencode.db`
+    const db = new Database(path, { readonly: true })
+    const ts = "time_created/1000,'unixepoch','localtime'"
+    const c = "json_extract(data,'$.cost')"
+    const row = db
+      .query(
+        `SELECT
+           COALESCE(SUM(CASE WHEN date(${ts})=date('now','localtime') THEN ${c} END),0) AS today,
+           COALESCE(SUM(CASE WHEN strftime('%Y-%W',${ts})=strftime('%Y-%W','now','localtime') THEN ${c} END),0) AS week,
+           COALESCE(SUM(CASE WHEN strftime('%Y-%m',${ts})=strftime('%Y-%m','now','localtime') THEN ${c} END),0) AS month
+         FROM message WHERE json_extract(data,'$.role')='assistant'`,
+      )
+      .get() as { today: number; week: number; month: number } | null
+    db.close()
+    if (!row) return null
+    return { today: row.today || 0, week: row.week || 0, month: row.month || 0 }
+  } catch {
+    return null
+  }
+}
+
 export const SparkCost: Plugin = async ({ client }, options) => {
   const o = (options ?? {}) as SparkCostOptions
   const env = process.env
@@ -163,13 +195,22 @@ export const SparkCost: Plugin = async ({ client }, options) => {
     },
 
     // Toast once, on the first event — by now the TUI is attached, so this
-    // is safe to await. Doing it in `config` deadlocks bootstrap.
+    // is safe to await (and to query the db). Doing it in `config` deadlocks
+    // bootstrap.
     event: async () => {
       if (toasted || !summary || !showToast) return
       toasted = true
+      const p = await periodTotals(env)
+      const spend = p
+        ? `Today $${p.today.toFixed(4)} · Week $${p.week.toFixed(4)} · Month $${p.month.toFixed(4)}\n`
+        : ""
       try {
         await client.tui.showToast({
-          body: { title: "Spark cost", message: summary, variant: "info" },
+          body: {
+            title: "Spark cost",
+            message: `${spend}${summary}`,
+            variant: "info",
+          },
         })
       } catch {
         // TUI not attached (server/CI) — silent.
