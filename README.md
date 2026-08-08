@@ -157,6 +157,32 @@ input:  30 × 0.357 / (3.6 × 70) = $0.043 / 1M tokens
 
 Pennies per million tokens. The Spark is cheap to run.
 
+## Reference: SDG&E TOU-DR-1 (DGX Spark, Ling 3.0 Flash)
+
+Worked out for the **default config** — SDG&E TOU-DR-1 Tier 1 (San Diego),
+30 W marginal, decode 20 tok/s, prefill 70 tok/s, cached input free. These are
+the exact numbers this repo ships with; swap the rate/throughput for your own.
+
+**Cost per 1M tokens**
+
+| SDG&E slot     | Rate   | $/1M output | $/1M input | $/1M cached |
+|----------------|--------|-------------|------------|-------------|
+| Super-off-peak | 26.7¢  | $0.1113     | $0.0318    | $0.0000     |
+| Off-peak       | 35.7¢  | $0.1488     | $0.0425    | $0.0000     |
+| On-peak        | 58.4¢  | $0.2433     | $0.0695    | $0.0000     |
+
+**Tokens per penny ($0.01)**
+
+| SDG&E slot     | Rate   | Output tok / 1¢ | Input tok / 1¢ |
+|----------------|--------|-----------------|----------------|
+| Super-off-peak | 26.7¢  | ~89,900         | ~314,600       |
+| Off-peak       | 35.7¢  | ~67,200         | ~235,300       |
+| On-peak        | 58.4¢  | ~41,100         | ~143,800       |
+
+On-peak costs **2.19×** super-off-peak — run overnight for the cheapest tokens.
+For scale, hosted frontier models bill ~$5–15 / 1M output; the Spark on-peak is
+**$0.24 / 1M**, ~20–60× cheaper per token on energy alone (hardware not amortized).
+
 ## License
 
 MIT © CHA0S-CORP
